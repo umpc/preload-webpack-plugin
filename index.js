@@ -82,6 +82,8 @@ class PreloadPlugin {
         } else if (options.include === 'all') {
             // Async chunks, vendor chunks, normal chunks.
           extractedChunks = compilation.chunks;
+        } else if (options.include === 'all-assets') {
+          extractedChunks = [{files: Object.keys(compilation.assets)}];
         } else if (Array.isArray(options.include)) {
           // Keep only user specified chunks
           extractedChunks = compilation
@@ -102,7 +104,14 @@ class PreloadPlugin {
         extractedChunks = extractedChunks.filter(chunk => doesChunkBelongToHTML(
           chunk, Object.values(htmlPluginData.assets.chunks), {}));
 
-        flatten(extractedChunks.map(chunk => chunk.files)).filter(entry => {
+        flatten(extractedChunks.map(chunk => chunk.files))
+        .filter(entry => {
+          return (
+            !this.options.fileWhitelist ||
+            this.options.fileWhitelist.some(regex => regex.test(entry) === true)
+          );
+        })
+        .filter(entry => {
           return this.options.fileBlacklist.every(regex => regex.test(entry) === false);
         }).forEach(entry => {
           entry = `${publicPath}${entry}`;
